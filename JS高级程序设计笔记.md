@@ -37,3 +37,44 @@ function compare(value1, value2){
 * reverse
 
 反转数组中的元素
+
+#### 2. JS中的继承
+
+
+
+#### 3. BOM
+
+> window
+
+* BOM的核心，也是JS定义的全局（global）对象，因此可以再任意地方访问到window的属性和方法
+* 使用 delete 关键字可以删除window的属性和方法，但是不可以删除使用var关键字声明的属性和方法（使用 IE < 9 的浏览器时，不管是window和var都会抛出错误），因为 使用var关键字声明的变量在添加到window对象上时，会添加 [Configurable: false] 的特性，使得它不可以被delete删除
+* screenLeft | screenX， screenRight | screenY 窗口位置信息，浏览器提供的属性
+
+> location
+
+![location](/git图床/location对象.png)
+
+> navigator
+
+* 提供识别客户端浏览器的事实标准
+* 可以用来检测插件
+
+> screen
+
+* 
+
+> history
+
+* 保存着用户的上网记录
+* go 可以传入整数，前进后者返回浏览记录的长度，或者传入字符串，浏览器会检索最近浏览的包括参数的url
+* forward, back go的替代品，相当于go(1),go(-1)
+
+
+
+#### 4. 客户端检测
+
+**在有通用的方法之前，最好不要使用客户端检测**
+
+> 能力检测 | 特性检测
+
+* 用来识别浏览器的能力，而不是浏览器
