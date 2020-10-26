@@ -78,3 +78,55 @@ function compare(value1, value2){
 > 能力检测 | 特性检测
 
 * 用来识别浏览器的能力，而不是浏览器
+
+
+
+
+
+#### 5. DOM
+
+> Node类型
+
+​	DOM1级定义一个Node接口，DOM中的节点类型都继承了该类型；每一个节点都有一个childNodes属性，保存着NodeList对象（一种类数组对象），NodeList是一个动态的类数组，会根据dom的变化而变化；
+
+* nodeName
+
+获取元素节点标签名称
+
+* nodeValue
+
+nodeValue的值始终为null
+
+* 使用xx.childNodes[index]和xx.childNodes.item(index)方法访问类数组
+* 使用Array.prototype.slice方法可以将类数组转化成数组
+* 每个节点都有一个parentNode属性，指向父节点
+* previousSibing，访问同级的上一个兄弟节点，没有则为null
+* nextSibing，访问同级的下一个兄弟节点，没有则为null
+* firstChild，指向第一个子节点，没有则为null
+* lastChild，指向最后一个子节点，没有则为null
+* hasChildNodes()方法用来查询是否由子节点，返回bool，比查询childNodes.length方便
+* ownerDocument，指向整个文档的文档节点
+
+> 操作节点
+
+* appendChild()，用来向childNodes列表的末尾添加一个节点，返回 新增的；如果该节点本身就在文档中存在，那么会将该节点从原来位置转移到新位置
+
+* insertBefore(arg1, arg2), arg1：要插入的节点，arg2：作为参照的节点。如果arg2 = null ，相当于apendChild()
+* replaceChild(arg1, arg2), arg1：要替换的节点，arg2：被替换的节点。
+* removeChild(arg1), arg1：要移除的节点，return arg1
+* cloneNode(arg1), arg1: bool, 是否深度克隆，克隆之后返回的节点属于文档所有；没有父节点，要手动指定； 该方法不会去复制添加到DOM节点种的JavaScript属性，只复制特性
+
+* normalize(),，这个方法唯一的作用就是处理文档树中的文本节点。由于解析器的实现或DOM操作等原因，可能会出现文本节点不包含文本，或者接连出现两个文本节点的情况。当在某个节点上调用这个方法时，就会在该节点的后代节点中查找上述两种情况。如果找到了空文本节点，则删除它；如果找到相邻的文本节点，则将它们合并为一个文本节点。
+
+> Document
+
+Javascript 中 使用 Document 类型表示文档，在浏览器中，document 对象是HTMLDocument（继承自Document 类型）的一个实例，表示整个HTML 页面。而且，document 对象是window 对象的一个属性，因此可以将其作为全局对象来访问
+
+> > Document属性
+
+* nodeType值为9
+* nodeName值为"#document"
+* nodeValue的值为null
+* parentNode值为null
+* ownerDocument值为null
+* 其子节点可能是一个DocumentType（最多一个），Element（最多一个），ProcessingInstruction或Comment
