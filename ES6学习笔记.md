@@ -127,3 +127,98 @@
   * 默认值
 
     对象解构也可以给默认值，生效的条件同样是严格等于undefined `===undefined`
+
+* 其他类型的解构
+
+  非object的解构都会转成object对象然后进行解构操作
+
+  ```js
+  let [a, b, c, d, e] = 'Hello'; // a = 'H', b = 'e', c = 'l', d = 'l', e = 'o'
+  let {length: len} = 'Hello' // len = 5
+  let { toString: s } = 123
+  s === Number.prototype.toString // true
+  let { toString: s } = true
+  s === Boolean.prototype.toString // true
+  let { prop: x } = undefined; // TypeError
+  let { prop: y } = null; // TypeError / undefined 和 null 无法转成对象，所以对它们进行解构赋值，都会报错
+  ```
+
+### 3. 字符串的拓展
+
+* 字符的Unicode表示法
+
+  ES6加强了对Unicode的支持，允许采用`\uxxxx`的方式表示一个字符，其中`xxxx`表示字符的Unicode码点。但是这种表示法只允许`\u0000 - \uFFFF`之间的字符，超出了这个范围需要用两个双字节的形式表示
+
+  ```js
+  "\u0061"  //  a
+  "\uD842\uDFB7" // "𠮷"
+  
+  "\u20BB7" // " 7" 直接在\u后面跟上超过0xFFFF的数值，js引擎会理解为 \u20BB + 7
+  ```
+
+  ES6对这点也进行了优化，新增了`{}`表示，只要将码点放入`{}`中，就可以正确的解读该字符
+
+  ```js
+  "\u{20BB7}"
+  // "𠮷"
+  
+  "\u{41}\u{42}\u{43}"
+  // "ABC"
+  
+  let hello = 123;
+  hell\u{6F} // 123
+  
+  '\u{1F680}' === '\uD83D\uDE80'
+  // true
+  
+  // 表示一个字符的6中方法
+  '\z' === 'z'  // true
+  '\172' === 'z' // true
+  '\x7A' === 'z' // true
+  '\u007A' === 'z' // true
+  '\u{7A}' === 'z' // true 
+  ```
+
+* 字符串的遍历器接口
+
+  ES6为字符串添加了遍历器接口，可以使得字符串可以被`for...of`进行遍历，最重要的是可以实别大于`0xFFFF`的码点，传统遍历无法识别。
+
+  ```js
+  let text = String.fromCodePoint(0x20BB7);
+  
+  for(let i = 0; i < text.length; i++) {
+      console.log(text[i]);
+  }
+  // " "
+  // " "
+  
+  for(let i of text) {
+      console.log(i)
+  }
+  // "𠮷"
+  ```
+
+* 直接输入`U+2028` 和 `U+2029`
+
+  js字符串允许直接输入字符，以及输入字符的转义形式，但是js规定5个字符，不能在字符串中直接使用，只能使用转义形式
+
+  1. U+005C：反斜杠（reverse solidus)
+  2. U+000D：回车（carriage return）
+  3. U+2028：行分隔符（line separator）
+  4. U+2029：段分隔符（paragraph separator）
+  5. U+000A：换行符（line feed）
+
+* JSON.stringify()的改造
+
+  UTF-8规定，`0xD800 - 0xDFFF`之间的码点不能单独使用，必须配对使用。JSON.stringify()的问题在于，它可能返回``0xD800``到`0xDFFF`之间的单个码点。
+
+  改造之后，如果遇到`0xD800`到`0xDFFF`之间的单个码点，或者不存在的配对形式，它会返回转义字符串，留给应用自己决定下一步的处理。
+
+  ```js
+  JSON.stringify('\u{D834}') // ""\\uD834""
+  JSON.stringify('\uDF06\uD834') // ""\\udf06\\ud834""
+  ```
+
+* 模板字符串
+
+  模板字符串会保留字符串中等值的空格和回车
