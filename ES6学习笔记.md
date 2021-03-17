@@ -221,4 +221,262 @@
 
 * 模板字符串
 
-  模板字符串会保留字符串中等值的空格和回车
+  模板字符串会保留字符串中等值的空格和回车，在模板字符串中可以使用`${}`放置变量或者表达式，函数。但是如果变量或者函数没有声明，将会报错
+  
+  ```js
+  let name = 'jf'
+  
+  console.log(`my name is ${name}`) => my name is jf
+  console.log(`1 + 1 = ${1 + 1}`) => 1 + 1 = 2
+  
+  ```
+
+* 标签模板
+
+  ```js
+  function test() {}
+  let name = 'jf'
+  
+  test`my name is ${name}`
+  等价于
+  test(['my ', ' name', ' is ', raw: ['my ', ' name', ' is ']], 'jf')
+  test(strList, ...values) => test(strList, value1, value2, ..., valuen)
+  ```
+
+  
+
+### 4. 字符串新增方法
+
+* String.fromCodePoint
+
+  String.fromCodePoint方法可以识别`0XFFFF`以上的码点，String.fromCharCode只能识别`0xFFFF`一下的码点，如果码点超过了，fromCharCode会舍弃最高位；但是String.fromCodePoint()可以有多个参数，但是会将参数合并。**注意：fromCodePoint定义在String对象上，codePointAt定义在字符串的实例对象上。**
+
+  ```js
+  String.fromCharCode(0x20BB7) => String.fromCharCode(0x0BB7) // "ஷ"
+  String.fromCodePoint(0x78, 0x1f680, 0x79) === 'x\uD83D\uDE80y' // true
+  ```
+
+* String.raw
+
+  String.raw返回一个连斜杠都被转义（即在斜杠前面再加一个斜杠）的字符串，用于处理模板字符串。
+
+  ```js
+  String.raw`Hi\n${2 + 3}` // 实际返回'Hi\\n5'， 显示则为‘Hi\n5’
+  String.raw`Hi\\n` // 实际返回‘Hi\\\\n’， 显示为'Hi\\n'
+  
+  // raw函数实现
+  String.raw = function (strings, ...values) {
+    let output = '';
+    let index;
+    for (index = 0; index < values.length; index++) {
+      output += strings.raw[index] + values[index];
+    }
+  
+    output += strings.raw[index]
+    return output;
+  }
+  ```
+
+* String.codePointAt
+
+  js内部，字符以UTF-8的形式存储，每个字符固定两个子节，那么当一个字符占有4个子节的时候，或被认为是两个字符。
+
+  ```js
+  let s = "𠮷";
+  
+  s.length // 2
+  s.charAt(0) // ''
+  s.charAt(1) // ''
+  s.charCodeAt(0) // 55362
+  s.charCodeAt(1) // 57271
+  ```
+
+  总之，`codePointAt()`方法会正确返回 32 位的 UTF-16 字符的码点。对于那些两个字节储存的常规字符，它的返回结果与`charCodeAt()`方法相同。
+
+  `codePointAt()`方法返回的是码点的十进制值，如果想要十六进制的值，可以使用`toString()`方法转换一下。最好配合`for...of`进行使用，因为`for...of`可以正确识别UTF-32的字符	,也可以使用`...`扩展运算符。
+
+  codePointAt还可以用来测试一个字符是两个子节还是四个子节组成的
+
+  ```js
+  function is32Bit(c) {
+      return c.codePointAt(0) > 0xFFFF;
+  }
+  
+  is32Bit("𠮷") // true
+  is32Bit("a") // false
+  ```
+
+* String.normalize
+
+  许多欧洲语言有语调符号和重音符号。为了表示它们，Unicode 提供了两种方法。一种是直接提供带重音符号的字符，比如`Ǒ`（\u01D1）。另一种是提供合成符号（combining character），即原字符与重音符号的合成，两个字符合成一个字符，比如`O`（\u004F）和`ˇ`（\u030C）合成`Ǒ`（\u004F\u030C）。
+
+  ```js
+  // 这两种表示方法，在视觉和语义上都等价，但是 JavaScript 不能识别。
+  
+  '\u01D1'==='\u004F\u030C' //false
+  
+  '\u01D1'.length // 1
+  '\u004F\u030C'.length // 2
+  
+  // ES6 提供字符串实例的normalize()方法，用来将字符的不同表示方法统一为同样的形式，这称为 Unicode 正规化。
+  '\u01D1'.normalize() === '\u004F\u030C'.normalize()
+  // true
+  ```
+
+  `normalize`方法可以接受一个参数来指定`normalize`的方式，参数的四个可选值如下。
+
+  - `NFC`，默认参数，表示“标准等价合成”（Normalization Form Canonical Composition），返回多个简单字符的合成字符。所谓“标准等价”指的是视觉和语义上的等价。
+  - `NFD`，表示“标准等价分解”（Normalization Form Canonical Decomposition），即在标准等价的前提下，返回合成字符分解的多个简单字符。
+  - `NFKC`，表示“兼容等价合成”（Normalization Form Compatibility Composition），返回合成字符。所谓“兼容等价”指的是语义上存在等价，但视觉上不等价，比如“囍”和“喜喜”。（这只是用来举例，`normalize`方法不能识别中文。）
+  - `NFKD`，表示“兼容等价分解”（Normalization Form Compatibility Decomposition），即在兼容等价的前提下，返回合成字符分解的多个简单字符。
+
+  **注意：`normalize`方法目前不能识别三个或三个以上字符的合成。这种情况下，还是只能使用正则表达式，通过 Unicode 编号区间判断。**
+
+* **实例方法：**includes()，startsWith（），endsWith（）
+
+  传统上，js只有`indexof`方法来确认一个字符串是否包含在另一个字符串中。ES6提供了三种新方法。
+
+  * includes（）：返回布尔值，表示是否找到了参数字符串
+  * startsWith（）：返回布尔值，表示参数字符串是否在源字符串的头部。
+  * endsWith（）：返回布尔值，表示参数字符串是否在源字符串的尾部。
+
+  这三个方法都接收第二个参数，表示开始的位置。但是`endsWith`跟其他两个方法不同，endsWith表示0 - 当前位置。
+
+  ```js
+  let str = 'Hello World!'
+  
+  str.includes('llo') // true
+  str.startsWith('He') // true
+  str.endsWith('ld!') // true
+  ```
+
+* 实例方法：repeat（）
+
+  `repeat`方法返回一个新字符串，表示将源字符串重复n次。参数如果是小数，会向下取整；负数或者`Infinity`会报错，但是如果是`0 - 1`之间的小数，将会视为0。参数为NaN，等同于0。如果参数为字符串，会先转成数字。
+
+  ```js
+  'x'.repeat(3) // 'xxx'
+  'x'.repeat(2.9) // 'xx' 小数会向下取整
+  
+  'na'.repeat(Infinity) // RangeError
+  'na'.repeat(-1) // RangeError
+  
+  'na'.repeat(-0.9) // ''
+  'na'.repeat(NaN) // ''
+  
+  'na'.repeat('na') // ''
+  'na'.repeat('2') // 'nana'
+  
+  ```
+
+* **实例方法：**padStart()，padEnd()
+
+  这两个方法使用来补全字符串的，都接收两个参数：最大补全的长度，补全用的字符串；`padStart`用来补全头部，`padEnd`用来补全尾部.
+
+  * 如果第二个参数为空，默认使用空格补全。
+  * 如果补全字符超过补全长度，将会截取字符串；如果补全字符串的长度不够，会重复字符串;如果源字符串长度超过第一个参数，那么返回源字符串，操作无效
+
+  ```js
+  'x'.padStart(5, 'abab') // 'ababx'
+  'x'.padStart(5, 'abc') // 'abcax'
+  'x'.padStart(5) // '    x'
+  
+  // 常见用途
+  '1'.padStart(10, '0') // "0000000001"
+  '12'.padStart(10, '0') // "0000000012"
+  '123456'.padStart(10, '0') // "0000123456"
+  
+  '12'.padStart(10, 'YYYY-MM-DD') // "YYYY-MM-12"
+  '09-12'.padStart(10, 'YYYY-MM-DD') // "YYYY-09-12"
+  ```
+
+* **实例方法：**trimStart()，trimEnd()
+
+  `trimStart`，`trimEnd`为清除字符串头部/尾部的空格，属于函数式，别名为`trimLeft`，`trimRight`
+
+* **实例方法：**matchAll()
+
+  该方法返回一个正则表达式在当前字符串的所有匹配
+
+  ```js
+  let itorator = 'avacab',matchAll(/a/g)
+  
+  itorator.next().value // ["a", index: 0, input: "avacab", groups: undefined]
+  itorator.next().value // ["a", index: 2, input: "avacab", groups: undefined]
+  itorator.next().value // ["a", index: 4, input: "avacab", groups: undefined]
+  itorator.next().value // undefined
+  ```
+
+  
+
+* **实例方法：**replaceAll()
+
+  与`replace`方法相同，但是可以替换所有的，属于函数式。接收两个参数：搜索模式，替换字符串
+
+  * 搜索模式可以是字符串，也可以是一个正则表达式，带有全局模式符`g`，如果没有，会报错;**注意：matchAll同**
+
+  * 第二个参数表示替换字符串，可以使用一些特殊的字符串
+    - `$&`：匹配的子字符串。
+    - `$ ``：匹配结果前面的文本。
+    - `$` `：匹配结果后面的文本。
+    - `$n`：匹配成功的第`n`组内容，`n`是从1开始的自然数。这个参数生效的前提是，第一个参数必须是正则表达式。
+    - `$$`：指代美元符号`$`。
+    - 也可以是一个函数，函数的返回值将替换掉第一个参数匹配的文本，这个替换函数可以接受多个参数。第一个参数是捕捉到的匹配内容，第二个参数捕捉到是组匹配（有多少个组匹配，就有多少个对应的参数）。此外，最后还可以添加两个参数，倒数第二个参数是捕捉到的内容在整个字符串中的位置，最后一个参数是原字符串。
+
+    ```js
+  // $& 表示匹配的字符串，即`b`本身
+  // 所以返回结果与原字符串一致
+  'abbc'.replaceAll('b', '$&')
+  // 'abbc'
+  
+  // $` 表示匹配结果之前的字符串
+  // 对于第一个`b`，$` 指代`a`
+  // 对于第二个`b`，$` 指代`ab`
+  'abbc'.replaceAll('b', '$`')
+  // 'aaabc'
+  
+  // $' 表示匹配结果之后的字符串
+  // 对于第一个`b`，$' 指代`bc`
+  // 对于第二个`b`，$' 指代`c`
+  'abbc'.replaceAll('b', `$'`)
+  // 'abccc'
+  
+  // $1 表示正则表达式的第一个组匹配，指代`ab`
+  // $2 表示正则表达式的第二个组匹配，指代`bc`
+  'abbc'.replaceAll(/(ab)(bc)/g, '$2$1')
+  // 'bcab'
+  
+  // $$ 指代 $
+  'abc'.replaceAll('b', '$$')
+  // 'a$c'
+  
+  'aabbcc'.replaceAll('b', () => '_')
+  // 'aa__cc'
+  
+  const str = '123abc456';
+  const regex = /(\d+)([a-z]+)(\d+)/g;
+  
+  function replacer(match, p1, p2, p3, offset, string) {
+    return [p1, p2, p3].join(' - ');
+  }
+  
+  str.replaceAll(regex, replacer)
+  // 123 - abc - 456
+    ```
+
+  
+
+### 5. 正则的拓展
+
+* `RegExp`构造参数
+
+  在ES5中，`RegExp`函数有两种情况
+
+  * 接收两个参数：字符串，正则表达式的修饰符。返回一个正则表达式。
+  * 接收一个参数：正则表达式。返回一个正则表达式的拷贝。ES5 不允许此时使用第二个参数添加修饰符，否则会报错。
+
+  ES6改变了这一行为，选择优先使用第二个参数的修饰符，覆盖正则表达式本身的修饰符。
+
+* 字符串的正则方法
+
+  
